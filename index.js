@@ -140,19 +140,24 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
 
         let tl = gsap.timeline();
 
-        tl.to(reel.reelContainersArray[0], { y: 615, duration: 2 });
-        tl.to(reel.reelContainersArray[1], { y: 615, duration: 2 });
-        tl.to(reel.reelContainersArray[2], { y: 615, duration: 2 });
-        tl.to(reel.reelContainersArray[3], { y: 615, duration: 2 });
+        tl.to(reel.reelContainersArray[0], { y: 615, duration: 2.8, ease: "none" }, .1)
+            .to(reel.reelContainersArray[1], { y: 615, duration: 2.2, ease: "none" }, .1)
+            .to(reel.reelContainersArray[2], { y: 615, duration: 1.6, ease: "none" }, .1)
+            .to(reel.reelContainersArray[3], { y: 615, duration: 0.8, ease: "none" }, .1);
 
 
         reel.app.ticker.add((delta) => {
-            if (reel.reelContainersArray[reel.reelContainersArray.length - 1].position.y >= 1000) {
-                reel.reelContainersArray.unshift(reel.reelContainersArray.pop());
 
-                reel.reelContainersArray[reel.reelContainersArray.length - 1].position.y = reelPosArray[1][0];
-                console.log(reel.reelContainersArray[reel.reelContainersArray.length - 1].position.y);
+            for (let i = 0; i < reel.reelContainersArray.length; i++) {
+                if (reel.reelContainersArray[i].position.y >= 610) {
+                    //     reel.reelContainersArray.unshift(reel.reelContainersArray.pop());
+
+                    reel.reelContainersArray[i].position.y = reelPosArray[1][0];
+                    console.log(reel.reelContainersArray[reel.reelContainersArray.length - 1].position.y);
+                }
+
             }
+
         })
     }
 
