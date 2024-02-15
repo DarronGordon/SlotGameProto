@@ -4,8 +4,11 @@
 import * as PIXI from "pixi.js";
 //import Victor from "victor";
 //import Matter from "matter-js";
-import gsap from "gsap";
+import gsap, { Bounce } from "gsap";
+import { PixiPlugin } from "gsap/PixiPlugin";
 
+
+gsap.registerPlugin(PixiPlugin);
 //#endregion
 
 import iconBG from './Fruits/Panel.png';
@@ -53,7 +56,12 @@ const reelPosArray = [
     [80, 300, 500],// X pos's
     [-130, 50, 230, 420]// Y pos's
 ];
-
+// function lerp(a1, a2, t) {
+//     return a1 * (1 - t) + a2 * t;
+// }
+function lerp(a, b, alpha) {
+    return a + alpha * (a - b);
+}
 
 export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS 
 
@@ -70,6 +78,7 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
         this.reelContainersArray = [];
     }
 
+
     //SET UP PLAY AREA & BACKGROUND
     SetUpReelContainer() {
         this.app.stage.addChild(this.reelContainer);
@@ -81,10 +90,12 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
         this.reelContainer.addChild(this.reelContainerBG);
         this.app.stage.addChild(this.reelContainer);
         this.isSpinning = false;
+        this.spinnerFinished = false;
     }
 
     //SET UP REEL ICONS
     SetUpReelIcons() {
+
 
         for (let i = 0; i < this.reelArray.length; i++) {
             const reelRowContainer = new PIXI.Container();
@@ -124,27 +135,32 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
                 this.iconsArray[i].push(reelIconSprite);
                 this.containersArray[i].push(iconContainer);
 
-
+                this.spinnerFinished = false;
             };
             //  this.reelContainer.addChild(iconContainer);
             reelRowContainer.y = reelPosArray[1][i];
+
             this.reelContainersArray.push(reelRowContainer);
+
+
         }
-        console.log(this.reelContainersArray);
     };
 
     startRolling() {
 
-        if (this.isSpinning) return;
-        this.isSpinning = true;
+        console.log(reel.isSpinning);
+
+        if (reel.isSpinning) return;
+        startBtn.interactive = false;
+        reel.isSpinning = true;
+        reel.spinnerFinished = false;
 
         let tl = gsap.timeline();
 
-        tl.to(reel.reelContainersArray[0], { y: 615, duration: 2.8, ease: "none" }, .1)
-            .to(reel.reelContainersArray[1], { y: 615, duration: 2.2, ease: "none" }, .1)
-            .to(reel.reelContainersArray[2], { y: 615, duration: 1.6, ease: "none" }, .1)
-            .to(reel.reelContainersArray[3], { y: 615, duration: 0.8, ease: "none" }, .1);
-
+        tl.to(reel.reelContainersArray[0], { y: 615, duration: .45, ease: "expoScale(0.5,7,none)" }, .1)
+            .to(reel.reelContainersArray[1], { y: 615, duration: .35, ease: "expoScale(0.5,7,none)" }, .1)
+            .to(reel.reelContainersArray[2], { y: 615, duration: 0.25, ease: "expoScale(0.5,7,none)" }, .1)
+            .to(reel.reelContainersArray[3], { y: 615, duration: 0.15, ease: "expoScale(0.5,7,none)" }, .1);
 
         reel.app.ticker.add((delta) => {
 
@@ -153,30 +169,107 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
                     //     reel.reelContainersArray.unshift(reel.reelContainersArray.pop());
 
                     reel.reelContainersArray[i].position.y = reelPosArray[1][0];
-                    console.log(reel.reelContainersArray[reel.reelContainersArray.length - 1].position.y);
-                }
 
+                    reel.startSpinning(i);
+
+
+                }
+                //  reel.reelContainersArray[i].filters = [blurFilter1];
             }
+
 
         })
     }
 
-    // SetUpReelIconBlocks() { // 560 is the height of the reel 
-    //     const topReel = this.SetUpReelIcons();
-    //     const middleReel = this.SetUpReelIcons();
-    //     const bottomReel = this.SetUpReelIcons();
+    startSpinning(i) {
 
-    //     topReel.y = -560;
-    //     middleReel.y = 0
-    //     bottomReel.y = 560;
+        if (reel.spinnerFinished) return;
 
-    // }
+        let spinner = gsap.fromTo(reel.reelContainersArray[i], { y: reelPosArray[1][0] }, { y: 615, duration: .35, ease: "expoScale(0.5,7,none)", });
 
-};
+        setTimeout(reel.finishSpin, 2000, spinner);
+    }
+
+    finishSpin(spinner) {
+
+        if (reel.spinnerFinished) return;
+        reel.spinnerFinished = true;
+
+        reel.reelContainersArray.forEach((icon, index) => {
+            console.log(index);
+            for (let i = 3; i < 0; i--) {
+                let ranNum = Math.floor(Math.random() * reel.iconsTexArray.length); // randomize last reel images
+
+                icon.children[i].children[1].texture = (reel.iconsTexArray[ranNum]); // set index of icon to reelarray to hanbdle win conditions 
+                reelArray[index][i] = ranNum;
+
+            }
+            // if (icon.children[0].children[1].texture === icon.children[1].children[1].texture) {
+            console.log(reelArray);
+            // }
+        });
+
+        console.log(reel.reelContainersArray[0].children[0].children[1]._texture.textureCacheIds);
+
+        gsap.fromTo(reel.reelContainersArray[0], { y: -130 }, { y: reelPosArray[1][3], duration: .5, ease: 'back.out(1.2)', repeat: 0 });
+        gsap.fromTo(reel.reelContainersArray[1], { y: -130 }, { y: reelPosArray[1][2], duration: .7, ease: 'back.out(1.2)', repeat: 0 });
+        gsap.fromTo(reel.reelContainersArray[2], { y: -130 }, { y: reelPosArray[1][1], duration: .9, ease: 'back.out(1.2)', repeat: 0 });
+
+
+        setTimeout(() => {
+
+            reel.isSpinning = false;
+            console.log(reel.spinnerFinished);
+            startBtn.interactive = true;
+        }, 2000);
+    }
+
+}
+
+const margin = 150
+const bottomBoarder = new PIXI.Graphics();
+
+bottomBoarder.beginFill(0x000000);
+
+bottomBoarder.drawRect(0, app.screen.height - margin, app.screen.width, 150);
+
+bottomBoarder.endFill();
+bottomBoarder.zIndex = 2;
+const topBoarder = new PIXI.Graphics();
+
+topBoarder.beginFill(0x000000);
+
+topBoarder.drawRect(0, 0 - margin / 1.3, app.screen.width, 150);
+
+topBoarder.endFill();
+topBoarder.zIndex = 2;
+
+const startBtn = new PIXI.Graphics();
+const startBtnTxt = new PIXI.Text('Start')
+
+
+startBtn.beginFill(0x33F6FF);
+
+startBtn.drawCircle(app.screen.width / 2, app.screen.height - margin / 1.7, 50);
+startBtnTxt.x = app.screen.width / 2.15;
+startBtnTxt.y = app.screen.height - margin / 1.5;
+startBtn.endFill();
+startBtn.zIndex = 2;
+startBtn.interactive = true;
+startBtn.cursor = 'pointer';
+
 
 const reel = new Reel(app, reelArray, iconTexArray);
 
 reel.SetUpReelContainer();
 reel.SetUpReelIcons();
 
-document.addEventListener('click', reel.startRolling);
+//document.addEventListener('click', reel.startRolling);
+startBtn.on('pointerover', () => { if (startBtn.interactive === false) { return; } startBtn.tint = 0x605f5a; });
+startBtn.on('pointerout', () => { if (startBtn.interactive === false) { return; } startBtn.tint = 0x33F6FF; });
+startBtn.on('pointerdown', reel.startRolling);
+
+app.stage.addChild(topBoarder);
+app.stage.addChild(bottomBoarder);
+app.stage.addChild(startBtn);
+app.stage.addChild(startBtnTxt);
