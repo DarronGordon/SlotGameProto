@@ -56,12 +56,7 @@ const reelPosArray = [
     [80, 300, 500],// X pos's
     [-130, 50, 230, 420]// Y pos's
 ];
-// function lerp(a1, a2, t) {
-//     return a1 * (1 - t) + a2 * t;
-// }
-function lerp(a, b, alpha) {
-    return a + alpha * (a - b);
-}
+
 
 export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS 
 
@@ -76,6 +71,7 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
         this.iconsArray = [[], [], [], []];
         this.containersArray = [[], [], [], []];
         this.reelContainersArray = [];
+        this.reelSpinSpeed = 0;
     }
 
 
@@ -147,80 +143,66 @@ export class Reel { // CREATE THE REEL THAT ROLLS AND HOLDS THE ICONS
     };
 
     startRolling() {
-
-        console.log(reel.isSpinning);
-
         if (reel.isSpinning) return;
+
+        reel.reelSpinSpeed = 25;
         startBtn.interactive = false;
         reel.isSpinning = true;
         reel.spinnerFinished = false;
 
-        let tl = gsap.timeline();
-
-        tl.to(reel.reelContainersArray[0], { y: 615, duration: .45, ease: "expoScale(0.5,7,none)" }, .1)
-            .to(reel.reelContainersArray[1], { y: 615, duration: .35, ease: "expoScale(0.5,7,none)" }, .1)
-            .to(reel.reelContainersArray[2], { y: 615, duration: 0.25, ease: "expoScale(0.5,7,none)" }, .1)
-            .to(reel.reelContainersArray[3], { y: 615, duration: 0.15, ease: "expoScale(0.5,7,none)" }, .1);
 
         reel.app.ticker.add((delta) => {
 
+            for (let index = 0; index < reel.reelContainersArray.length; index++) {
+                reel.reelContainersArray[index].y += reel.reelSpinSpeed * delta; //                    
+
+            }
             for (let i = 0; i < reel.reelContainersArray.length; i++) {
-                if (reel.reelContainersArray[i].position.y >= 610) {
-                    //     reel.reelContainersArray.unshift(reel.reelContainersArray.pop());
+                if (reel.reelContainersArray[i].position.y >= 600) {
 
-                    reel.reelContainersArray[i].position.y = reelPosArray[1][0];
-
-                    reel.startSpinning(i);
-
+                    reel.reelContainersArray[i].position.y = reelPosArray[1][0]; // if its at the bottom put it at the top
 
                 }
-                //  reel.reelContainersArray[i].filters = [blurFilter1];
             }
 
-
-        })
+        });
+        const t = setTimeout(() => {
+            reel.finishSpin();
+        },
+            2000);
     }
 
-    startSpinning(i) {
 
-        if (reel.spinnerFinished) return;
 
-        let spinner = gsap.fromTo(reel.reelContainersArray[i], { y: reelPosArray[1][0] }, { y: 615, duration: .35, ease: "expoScale(0.5,7,none)", });
-
-        setTimeout(reel.finishSpin, 2000, spinner);
-    }
-
-    finishSpin(spinner) {
+    finishSpin() {
 
         if (reel.spinnerFinished) return;
         reel.spinnerFinished = true;
+        reel.reelSpinSpeed = 0;
 
         reel.reelContainersArray.forEach((icon, index) => {
-            console.log(index);
-            for (let i = 3; i < 0; i--) {
+
+            for (let i = 0; i < 3; i++) {
                 let ranNum = Math.floor(Math.random() * reel.iconsTexArray.length); // randomize last reel images
 
                 icon.children[i].children[1].texture = (reel.iconsTexArray[ranNum]); // set index of icon to reelarray to hanbdle win conditions 
                 reelArray[index][i] = ranNum;
 
             }
-            // if (icon.children[0].children[1].texture === icon.children[1].children[1].texture) {
-            console.log(reelArray);
-            // }
         });
 
-        console.log(reel.reelContainersArray[0].children[0].children[1]._texture.textureCacheIds);
+        for (let index = 0; index < reel.reelContainersArray.length; index++) {
+            gsap.fromTo(reel.reelContainersArray[index], { y: reel.reelContainersArray[index].y, y: reelPosArray[1][index] + 10 }, {
+                duration: .8, ease: "elastic.out",
+                y: reelPosArray[1][index] - 5
+            });
 
-        gsap.fromTo(reel.reelContainersArray[0], { y: -130 }, { y: reelPosArray[1][3], duration: .5, ease: 'back.out(1.2)', repeat: 0 });
-        gsap.fromTo(reel.reelContainersArray[1], { y: -130 }, { y: reelPosArray[1][2], duration: .7, ease: 'back.out(1.2)', repeat: 0 });
-        gsap.fromTo(reel.reelContainersArray[2], { y: -130 }, { y: reelPosArray[1][1], duration: .9, ease: 'back.out(1.2)', repeat: 0 });
+        }
 
-
-        setTimeout(() => {
-
+        const t = setTimeout(() => {
             reel.isSpinning = false;
-            console.log(reel.spinnerFinished);
             startBtn.interactive = true;
+
         }, 2000);
     }
 
@@ -267,7 +249,7 @@ reel.SetUpReelIcons();
 //document.addEventListener('click', reel.startRolling);
 startBtn.on('pointerover', () => { if (startBtn.interactive === false) { return; } startBtn.tint = 0x605f5a; });
 startBtn.on('pointerout', () => { if (startBtn.interactive === false) { return; } startBtn.tint = 0x33F6FF; });
-startBtn.on('pointerdown', reel.startRolling);
+startBtn.on('pointerdown', () => { ; reel.startRolling(); });
 
 app.stage.addChild(topBoarder);
 app.stage.addChild(bottomBoarder);
